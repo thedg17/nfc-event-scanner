@@ -51,7 +51,7 @@ gapi.load("client:auth2", initClient);
 // Append row to Google Sheet
 async function appendRegisterRow(name, cardid) {
     return gapi.client.sheets.spreadsheets.values.append({
-        spreadsheetId: /d/1Vp3kqDAZNHwYD-AHiYjM5ry646Bd6J5GhKFUe71J7hA/edit?gid=0#gid=0,
+        spreadsheetId: 1Vp3kqDAZNHwYD-AHiYjM5ry646Bd6J5GhKFUe71J7h,
         range: "Register!A:C",
         valueInputOption: "RAW",
         insertDataOption: "INSERT_ROWS",
@@ -101,3 +101,4 @@ document.getElementById("writeButton").addEventListener("click", async () => {
 
 </body>
 </html>
+
