@@ -48,9 +48,9 @@
 function initClient() {
     gapi.client
         .init({
-            apiKey: GOOGLE_API_KEY,
-            clientId: GOOGLE_CLIENT_ID,
-            scope: SCOPES,
+            apiKey: 813185029300-ej2m0qrpae9kucc0b2b89phu1l2poc7u.apps.googleusercontent.com,
+            clientId: AIzaSyDjeOD1iJJ16hDIG0_gLBpPCTmqzW0KxAk,
+            scope: https://www.googleapis.com/auth/spreadsheets,
             discoveryDocs: [
                 "https://sheets.googleapis.com/$discovery/rest?version=v4"
             ],
@@ -86,9 +86,12 @@ async function startScan(eventName) {
                 `✔ ${cardid} logged for ${eventName}`;
         };
 
-    } catch (err) {
-        alert("Scan error: " + err);
     }
+    catch (error) {
+  alert("NFC Write Error: " + JSON.stringify(error));
+  console.error(error);
+}
+
 }
 
 
@@ -100,7 +103,7 @@ async function saveEventToSheet(cardid, eventName) {
     const scannerName = "Scanner Device"; // You may customize per device
 
     return gapi.client.sheets.spreadsheets.values.append({
-        spreadsheetId: SHEET_ID,
+        spreadsheetId: /d/1Vp3kqDAZNHwYD-AHiYjM5ry646Bd6J5GhKFUe71J7hA/edit?gid=1843599820#gid=1843599820,
         range: "Sheet1!A:E",
         valueInputOption: "RAW",
         insertDataOption: "INSERT_ROWS",
