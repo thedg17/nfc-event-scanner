@@ -64,32 +64,34 @@ async function writeToCard() {
     ]
 });
 
-        document.getElementById("status").innerText =
-            "✔ Card written successfully! Saving to Google Sheet…";
+document.getElementById("writeButton").addEventListener("click", async () => {
+    const cardId = document.getElementById("cardIdInput").value.trim();
 
-        await saveToGoogleSheet(cardid, name);
+    try {
+        const ndef = new NDEFReader();
+        await ndef.write({
+            records: [
+                {
+                    recordType: "text",
+                    data: cardId
+                }
+            ]
+        });
 
-        document.getElementById("status").innerText =
-            "✔ Registration complete!";
-    } catch (err) {
-        alert("NFC Write Error: " + err);
+        alert("Card written successfully!");
+
+        // Write to Google Sheets
+        await appendRegisterRow(cardId);
+
+    } catch (error) {
+        alert("NFC Write Error: " + JSON.stringify(error));
+        console.error(error);
     }
-}
+});
 
-async function saveToGoogleSheet(cardid, name) {
-    const now = new Date().toLocaleString();
-
-    return gapi.client.sheets.spreadsheets.values.append({
-        spreadsheetId: SHEET_ID,
-        range: "Sheet1!A:E",
-        valueInputOption: "RAW",
-        insertDataOption: "INSERT_ROWS",
-        resource: {
-            values: [[now, cardid, name, "REGISTER", "REG DEVICE"]],
-        },
-    });
 }
 </script>
 
 </body>
 </html>
+
