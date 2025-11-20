@@ -51,12 +51,12 @@ gapi.load("client:auth2", initClient);
 // Append row to Google Sheet
 async function appendRegisterRow(name, cardid) {
     return gapi.client.sheets.spreadsheets.values.append({
-        spreadsheetId: /d/1Vp3kqDAZNHwYD-AHiYjM5ry646Bd6J5GhKFUe71J7hA/edit?gid=1843599820#gid=1843599820,
+        spreadsheetId: /d/1Vp3kqDAZNHwYD-AHiYjM5ry646Bd6J5GhKFUe71J7hA/edit?gid=0#gid=0,
         range: "Register!A:C",
         valueInputOption: "RAW",
         insertDataOption: "INSERT_ROWS",
         resource: {
-            values: [[CardID, ParticipantName, new Date().toLocaleString()]]
+            values: [[name, cardid, new Date().toLocaleString()]]
         }
     });
 }
@@ -101,4 +101,3 @@ document.getElementById("writeButton").addEventListener("click", async () => {
 
 </body>
 </html>
-
