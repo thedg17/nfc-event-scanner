@@ -1,118 +1,144 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Event Scanner</title>
+    <title>Scan Event Entry</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <!-- Google OAuth + Sheets -->
     <script src="config.js"></script>
     <script src="https://apis.google.com/js/api.js"></script>
-    <script src="https://apis.google.com/js/platform.js"></script>
 
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
-
-        button {
-            padding: 15px;
-            width: 100%;
-            font-size: 18px;
-            margin-bottom: 12px;
-        }
-
-        #log {
-            margin-top: 20px;
-            font-size: 18px;
-            color: green;
-            min-height: 40px;
-        }
+        body { font-family: Arial; padding: 20px; }
+        label { display: block; margin-top: 15px; }
+        select, input { padding: 10px; width: 100%; margin-top: 5px; }
+        button { padding: 14px; width: 100%; margin-top: 20px; font-size: 18px; }
+        #log { margin-top: 20px; padding: 10px; background: #eee; }
     </style>
 </head>
 
 <body>
 
-<h2>Scan for Event</h2>
+<h2>Event NFC Scanner</h2>
 
-<button onclick="startScan('Event 1')">Scan for Event 1</button>
-<button onclick="startScan('Event 2')">Scan for Event 2</button>
-<button onclick="startScan('Event 3')">Scan for Event 3</button>
-<button onclick="startScan('Event 4')">Scan for Event 4</button>
-<button onclick="startScan('Event 5')">Scan for Event 5</button>
+<label>Scanner Name:</label>
+<input id="scannerName" placeholder="Eg: Gate A Staff">
 
-<p id="log"></p>
+<label>Select Event:</label>
+<select id="eventSelect">
+    <option value="Event 1">Event 1</option>
+    <option value="Event 2">Event 2</option>
+    <option value="Event 3">Event 3</option>
+    <option value="Event 4">Event 4</option>
+    <option value="Event 5">Event 5</option>
+</select>
+
+<button id="scanButton">Scan NFC Tag</button>
+
+<div id="log"></div>
 
 <script>
-
-// Load Google API
+// =========================
+// Google API Init
+// =========================
 function initClient() {
-    gapi.client
-        .init({
-            apiKey: 813185029300-ej2m0qrpae9kucc0b2b89phu1l2poc7u.apps.googleusercontent.com,
-            clientId: AIzaSyDjeOD1iJJ16hDIG0_gLBpPCTmqzW0KxAk,
-            scope: https://www.googleapis.com/auth/spreadsheets,
-            discoveryDocs: [
-                "https://sheets.googleapis.com/$discovery/rest?version=v4"
-            ],
-        })
-        .then(() => console.log("Google API Ready"));
+    gapi.client.init({
+        apiKey: AIzaSyDjeOD1iJJ16hDIG0_gLBpPCTmqzW0KxAk,
+        clientId: 813185029300-ej2m0qrpae9kucc0b2b89phu1l2poc7u.apps.googleusercontent.com,
+        scope: https://www.googleapis.com/auth/spreadsheets,
+        discoveryDocs: [
+            "https://sheets.googleapis.com/$discovery/rest?version=v4"
+        ],
+    })
+    .then(() => console.log("Google API Ready"));
 }
 
 gapi.load("client:auth2", initClient);
 
+// =========================
+// Append Scan Log to Sheet
+// =========================
+async function appendScanRow(CardID, Name, Event, Scanner, Timestamp) {
+    return gapi.client.sheets.spreadsheets.values.append({
+        spreadsheetId: /d/1Vp3kqDAZNHwYD-AHiYjM5ry646Bd6J5GhKFUe71J7hA/edit?gid=1843599820#gid=1843599820,
+        range: "Scans!A:E",
+        valueInputOption: "RAW",
+        insertDataOption: "INSERT_ROWS",
+        resource: {
+            values: [[
+                cardid,
+                name,
+                eventName,
+                scannerName,
+                new Date().toLocaleString()
+            ]]
+        }
+    });
+}
 
-// -----------------------------------------------------
-// START NFC SCAN
-// -----------------------------------------------------
-async function startScan(eventName) {
+// =========================
+// Fetch Name from Register Sheet
+// =========================
+async function getNameFromSheet(cardid) {
+    const response = await gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: SHEET_ID,
+        range: "Register!A:B"
+    });
 
-    document.getElementById("log").innerText =
-        `Scanning for ${eventName}… Tap NFC card`;
+    const rows = response.result.values || [];
+
+    for (let row of rows) {
+        if (row[1] === cardid) return row[0]; // row = [name, cardid]
+    }
+
+    return "Unknown";
+}
+
+// =========================
+// START SCAN
+// =========================
+document.getElementById("scanButton").addEventListener("click", async () => {
+    const eventName = document.getElementById("eventSelect").value;
+    const scannerName = document.getElementById("scannerName").value.trim();
+
+    if (!scannerName) {
+        alert("Enter Scanner Name first");
+        return;
+    }
 
     try {
         const ndef = new NDEFReader();
         await ndef.scan();
 
-        ndef.onreading = async (event) => {
-            const record = event.message.records[0];
-            const cardid = new TextDecoder().decode(record.data);
+        document.getElementById("log").innerHTML = "Hold NFC card near device...";
 
-            document.getElementById("log").innerText =
-                `Card detected: ${cardid} → Saving…`;
+        ndef.addEventListener("reading", async ({ message }) => {
+            let cardid = "";
 
-            await saveEventToSheet(cardid, eventName);
+            const record = message.records[0];
+            if (record.recordType === "text") {
+                const textDecoder = new TextDecoder();
+                cardid = textDecoder.decode(record.data);
+            }
 
-            document.getElementById("log").innerText =
-                `✔ ${cardid} logged for ${eventName}`;
-        };
+            const name = await getNameFromSheet(cardid);
 
+            await appendScanRow(cardid, name, eventName, scannerName);
+
+            document.getElementById("log").innerHTML =
+                `Scanned:<br>
+                <b>Card ID:</b> ${cardid}<br>
+                <b>Name:</b> ${name}<br>
+                <b>Event:</b> ${eventName}<br>
+                <b>Scanner:</b> ${scannerName}<br>
+                <b>Time:</b> ${new Date().toLocaleString()}`;
+        });
+
+    } catch (err) {
+        alert("NFC Scan Error: " + JSON.stringify(err));
+        console.error(err);
     }
-    catch (error) {
-  alert("NFC Write Error: " + JSON.stringify(error));
-  console.error(error);
-}
-
-}
-
-
-// -----------------------------------------------------
-// SAVE EVENT RECORD INTO GOOGLE SHEET
-// -----------------------------------------------------
-async function saveEventToSheet(cardid, eventName) {
-    const now = new Date().toLocaleString();
-    const scannerName = "Scanner Device"; // You may customize per device
-
-    return gapi.client.sheets.spreadsheets.values.append({
-        spreadsheetId: /d/1Vp3kqDAZNHwYD-AHiYjM5ry646Bd6J5GhKFUe71J7hA/edit?gid=1843599820#gid=1843599820,
-        range: "Sheet1!A:E",
-        valueInputOption: "RAW",
-        insertDataOption: "INSERT_ROWS",
-        resource: {
-            values: [[now, cardid, "", eventName, scannerName]],
-        },
-    });
-}
-
+});
 </script>
 
 </body>
