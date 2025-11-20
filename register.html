@@ -56,13 +56,13 @@ async function writeToCard() {
     try {
         const ndef = new NDEFReader();
         await ndef.write({
-            records: [
-                {
-                    recordType: "text",
-                    data: cardid
-                }
-            ]
-        });
+    records: [
+        {
+            recordType: "text",
+            data: cardId
+        }
+    ]
+});
 
         document.getElementById("status").innerText =
             "✔ Card written successfully! Saving to Google Sheet…";
