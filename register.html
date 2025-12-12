@@ -1,330 +1,103 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Register NFC Card — Simple UI</title>
+    <title>Register NFC Card</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!--
-  This file contains only HTML + CSS for a creative simple UI.
-  Hook your JS to:
-    - #name (input)
-    - #cardid (input)
-    - #writeButton (Main action)
-    - #saveOnly (save to sheet only)
-    - #generate (generate id)
-  Add your Google/NFC code separately.
--->
+    <!-- Google OAuth + Sheets -->
+    <script src="config.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://apis.google.com/js/platform.js"></script>
 
-<style>
-  /* ---------- Theme ---------- */
-  :root{
-    --bg: #f4f7fb;
-    --card: #ffffff;
-    --muted: #6b7280;
-    --accent: #6c5ce7; /* purple-ish accent */
-    --accent-2: #00b894; /* green accent */
-    --glass: rgba(255,255,255,0.6);
-    --radius: 14px;
-    --shadow: 0 8px 30px rgba(16,24,40,0.08);
-    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  }
-
-  /* ---------- Page ---------- */
-  html,body{height:100%; margin:0; background:linear-gradient(180deg,#f8fbff 0%,var(--bg) 100%);}
-  .wrap{
-    min-height:100vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:28px;
-    box-sizing:border-box;
-    gap:18px;
-  }
-
-  /* ---------- Card ---------- */
-  .card{
-    width:100%;
-    max-width:760px;
-    background:var(--card);
-    border-radius:var(--radius);
-    padding:28px;
-    box-shadow:var(--shadow);
-    display:grid;
-    grid-template-columns: 1fr 360px;
-    gap:22px;
-    align-items:start;
-  }
-
-  /* Left: form */
-  .hero{
-    display:flex;
-    flex-direction:column;
-    gap:14px;
-  }
-
-  h1{
-    margin:0;
-    font-size:20px;
-    letter-spacing:-0.2px;
-    color:#0f172a;
-  }
-
-  p.lead{
-    margin:0;
-    color:var(--muted);
-    font-size:13px;
-  }
-
-  .field{
-    margin-top:8px;
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-  }
-
-  label{
-    font-size:12px;
-    color:#111827;
-  }
-
-  input[type="text"]{
-    padding:12px 14px;
-    border-radius:10px;
-    border:1px solid #eef2ff;
-    background:linear-gradient(180deg,#fff,#fbfdff);
-    outline:none;
-    font-size:15px;
-    box-shadow:inset 0 1px 0 rgba(16,24,40,0.02);
-    transition:box-shadow .18s, transform .08s;
-  }
-  input[type="text"]:focus{
-    box-shadow:0 6px 18px rgba(99,102,241,0.12);
-    transform:translateY(-1px);
-    border-color: rgba(108,92,231,0.9);
-  }
-
-  /* small helper text */
-  .hint{
-    font-size:12px;
-    color:var(--muted);
-  }
-
-  /* Buttons row */
-  .controls{
-    display:flex;
-    gap:12px;
-    margin-top:10px;
-    align-items:center;
-  }
-
-  .btn{
-    border:0;
-    padding:12px 14px;
-    border-radius:10px;
-    font-weight:700;
-    cursor:pointer;
-    font-size:14px;
-    box-shadow: 0 6px 18px rgba(16,24,40,0.05);
-    transition:transform .12s, box-shadow .12s, opacity .12s;
-  }
-  .btn:active{transform:translateY(1px) scale(.998)}
-  .btn:disabled{opacity:.6; cursor:not-allowed}
-
-  .btn-primary{
-    background:linear-gradient(90deg,var(--accent), #5b21b6);
-    color:white;
-    padding-left:22px;
-    padding-right:22px;
-    letter-spacing:0.2px;
-  }
-
-  .btn-ghost{
-    background:transparent;
-    color:var(--accent);
-    border:1px dashed rgba(108,92,231,0.12);
-    font-weight:600;
-  }
-
-  .btn-small{
-    padding:10px 12px;
-    font-size:13px;
-    border-radius:9px;
-  }
-
-  /* Right: illustration/status */
-  .side{
-    background:linear-gradient(180deg,rgba(108,92,231,0.03),rgba(0,184,148,0.02));
-    border-radius:12px;
-    padding:18px;
-    display:flex;
-    flex-direction:column;
-    gap:14px;
-    align-items:stretch;
-    min-height:180px;
-  }
-
-  .nfc-visual{
-    width:100%;
-    height:88px;
-    border-radius:10px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:linear-gradient(180deg,#fff,#fbfdff);
-    border:1px solid rgba(16,24,40,0.03);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);
-  }
-
-  .chip{
-    width:56px;
-    height:56px;
-    border-radius:10px;
-    background:linear-gradient(180deg,#1e293b,#111827);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:white;
-    font-weight:800;
-    font-size:13px;
-    letter-spacing:0.6px;
-  }
-
-  .status{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-  }
-
-  .status .line{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    font-size:13px;
-    color:var(--muted);
-  }
-
-  .pill{
-    background:rgba(99,102,241,0.12);
-    color: #4c1d95;
-    padding:6px 10px;
-    border-radius:999px;
-    font-weight:700;
-    font-size:12px;
-  }
-
-  .success{
-    color: var(--accent-2);
-    font-weight:700;
-  }
-
-  .help{
-    font-size:12px;
-    color:var(--muted);
-    line-height:1.4;
-  }
-
-  footer.small{
-    margin-top:6px;
-    font-size:12px;
-    color:var(--muted);
-    text-align:center;
-  }
-
-  /* subtle animated wave under title */
-  .title-wrap{position:relative; display:flex; gap:10px; align-items:center}
-  .brand-dot{
-    width:42px;height:42px;border-radius:10px;
-    background:linear-gradient(180deg,#fff,#f1f5f9);
-    display:flex;align-items:center;justify-content:center;
-    box-shadow:0 6px 18px rgba(108,92,231,0.08);
-    border:1px solid rgba(16,24,40,0.03);
-  }
-  .logo-mark{
-    width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,#6c5ce7,#00b894);
-    display:block;
-    transform:rotate(20deg);
-  }
-
-  /* responsive */
-  @media (max-width:880px){
-    .card{grid-template-columns:1fr; padding:18px}
-    .side{order: -1}
-  }
-
-  @media (max-width:420px){
-    .brand-dot{display:none}
-    .controls{flex-direction:column}
-    .btn{width:100%}
-  }
-</style>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        input { padding: 10px; width: 100%; margin-bottom: 10px; }
+        button { padding: 12px; width: 100%; font-size: 18px; margin-top: 10px; }
+    </style>
 </head>
+
 <body>
-  <div class="wrap">
-    <main class="card" role="main" aria-labelledby="title">
-      <!-- LEFT / FORM -->
-      <section class="hero" aria-label="Register form">
-        <div class="title-wrap">
-          <div class="brand-dot" aria-hidden="true"><span class="logo-mark"></span></div>
-          <div>
-            <h1 id="title">Register NFC Card</h1>
-            <p class="lead">Write a card ID to a tag and save registrations. Simple and quick.</p>
-          </div>
-        </div>
+<h2>Register NFC Card</h2>
 
-        <!-- inputs -->
-        <div class="field">
-          <label for="name">Participant name</label>
-          <input id="name" type="text" placeholder="e.g. Priya Sharma" autocomplete="name" />
-        </div>
+<label>Participant Name:</label>
+<input id="name" placeholder="Enter name">
 
-        <div class="field" style="margin-top:6px">
-          <label for="cardid">Card ID</label>
-          <input id="cardid" type="text" placeholder="IDEA0001" value="IDEA0001" />
-          <div class="hint">Use the generator or type a custom ID.</div>
-        </div>
+<label>Card ID (IDEA0001):</label>
+<input id="cardid" placeholder="IDEA0001" value="IDEA0001">
 
-        <!-- buttons -->
-        <div class="controls" aria-hidden="false">
-          <button id="writeButton" class="btn btn-primary" title="Write to NFC">Write to NFC</button>
-          <button id="saveOnly" class="btn btn-ghost btn-small" title="Save registration without writing">Save</button>
-          <button id="generate" class="btn btn-ghost btn-small" title="Generate a random ID">Generate</button>
-        </div>
+<button id="writeButton">Write to NFC Tag</button>
 
-        <p class="help" style="margin-top:8px">
-          Tip: Make sure your device supports Web&nbsp;NFC and you're on HTTPS (or localhost). Hook your script to the buttons.
-        </p>
-      </section>
+<p id="status"></p>
 
-      <!-- RIGHT / VISUAL -->
-      <aside class="side" aria-label="Status and preview">
-        <div class="nfc-visual" aria-hidden="true">
-          <div style="display:flex;gap:14px;align-items:center">
-            <div class="chip">IDEA</div>
-            <div style="text-align:left">
-              <div style="font-weight:800;font-size:14px;color:#0f172a">NFC Tag</div>
-              <div style="font-size:12px;color:var(--muted)">Hold tag close to device</div>
-            </div>
-          </div>
-        </div>
+<script>
+// =====================
+// GOOGLE SHEETS SETUP
+// =====================
+function initClient() {
+    gapi.client
+        .init({
+            apiKey: AIzaSyDjeOD1iJJ16hDIG0_gLBpPCTmqzW0KxAk,
+            clientId: 813185029300-ej2m0qrpae9kucc0b2b89phu1l2poc7u.apps.googleusercontent.com,
+            scope: https://www.googleapis.com/auth/spreadsheets,
+            discoveryDocs: [
+                "https://sheets.googleapis.com/$discovery/rest?version=v4"
+            ],
+        })
+        .then(() => console.log("Google API Ready"));
+}
 
-        <div class="status" role="status" aria-live="polite">
-          <div class="line"><span class="small">Last action</span><span class="pill">Idle</span></div>
-          <div class="line"><span class="small">Saved</span><span class="small">—</span></div>
-          <div class="line"><span class="small">Device</span><span class="small">Web NFC?</span></div>
-        </div>
+gapi.load("client:auth2", initClient);
 
-        <footer class="small" aria-hidden="true">
-          Safe note: Keep your API keys out of public repos. Add JS separately to perform writes and sheet updates.
-        </footer>
-      </aside>
-    </main>
-  </div>
+// Append row to Google Sheet
+async function appendRegisterRow(name, cardid) {
+    return gapi.client.sheets.spreadsheets.values.append({
+        spreadsheetId: 1Vp3kqDAZNHwYD-AHiYjM5ry646Bd6J5GhKFUe71J7h,
+        range: "Register!A:C",
+        valueInputOption: "RAW",
+        insertDataOption: "INSERT_ROWS",
+        resource: {
+            values: [[name, cardid, new Date().toLocaleString()]]
+        }
+    });
+}
 
-  <!--
-    Minimal inline JS for demo purposes is intentionally omitted.
-    If you'd like, I can add a small script to connect the buttons to interactive demo behavior
-    (generate id, simulate status updates, or hook to your existing NFC & Google code).
-  -->
+// =====================
+// NFC WRITE FUNCTION
+// =====================
+document.getElementById("writeButton").addEventListener("click", async () => {
+    const name = document.getElementById("name").value.trim();
+    const cardid = document.getElementById("cardid").value.trim();
+
+    if (!name || !cardid) {
+        alert("Enter name and Card ID");
+        return;
+    }
+
+    try {
+        const ndef = new NDEFReader();
+
+        await ndef.write({
+            records: [
+                {
+                    recordType: "text",
+                    data: cardid
+                }
+            ]
+        });
+
+        alert("Card written successfully!");
+
+        // Save in Google Sheet
+        await appendRegisterRow(name, cardid);
+
+        alert("Saved to Google Sheet!");
+
+    } catch (error) {
+        alert("NFC Write Error: " + JSON.stringify(error));
+        console.error(error);
+    }
+});
+</script>
+
 </body>
 </html>
